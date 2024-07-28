@@ -4,7 +4,12 @@ import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.os.Bundle
 import android.widget.Toast
-import androidx.preference.*
+import androidx.preference.CheckBoxPreference
+import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceScreen
 
 class SettingsFragment : PreferenceFragmentCompat(),
     OnSharedPreferenceChangeListener, Preference.OnPreferenceChangeListener {
@@ -21,7 +26,7 @@ class SettingsFragment : PreferenceFragmentCompat(),
             // You don't need to set up preference summaries for checkbox preferences because
             // they are already set up in xml using summaryOff and summary On
             if (p !is CheckBoxPreference) {
-                val value = sharedPreferences.getString(p.key, "")
+                val value = sharedPreferences?.getString(p.key, "")
                 setPreferenceSummary(p, value)
             }
         }
@@ -47,6 +52,56 @@ class SettingsFragment : PreferenceFragmentCompat(),
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        preferenceScreen.sharedPreferences?.registerOnSharedPreferenceChangeListener(
+            this
+        )
+    }
+
+    //    This method should try to convert the new preference value
+    // to a float; if it cannot, show a helpful error message and return false. If it can be converted
+    // to a float check that that float is between 0 (exclusive) and 3 (inclusive). If it isn't, show
+    // an error message and return false. If it is a valid number, return true.
+    override fun onPreferenceChange(
+        preference: Preference,
+        newValue: Any?
+    ): Boolean {
+        // In this context, we're using the onPreferenceChange listener for checking whether the
+        // size setting was set to a valid value.
+        val error = Toast.makeText(
+            context,
+            "Please select a number between 0.1 and 3",
+            Toast.LENGTH_SHORT
+        )
+
+        // Double check that the preference is the size preference
+        val sizeKey = getString(R.string.pref_size_key)
+        if (preference.key == sizeKey) {
+            val stringSize = newValue as String
+            try {
+                val size = stringSize.toFloat()
+                // If the number is outside of the acceptable range, show an error.
+                if (size > 3 || size <= 0) {
+                    error.show()
+                    return false
+                }
+            } catch (nfe: NumberFormatException) {
+                // If whatever the user entered can't be parsed to a number, show an error
+                error.show()
+                return false
+            }
+        }
+        return true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        preferenceScreen.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(
+            this
+        )
+    }
+
     /**
      * Updates the summary for the preference
      *
@@ -68,48 +123,4 @@ class SettingsFragment : PreferenceFragmentCompat(),
         }
     }
 
-//    This method should try to convert the new preference value
-    // to a float; if it cannot, show a helpful error message and return false. If it can be converted
-    // to a float check that that float is between 0 (exclusive) and 3 (inclusive). If it isn't, show
-    // an error message and return false. If it is a valid number, return true.
-    override fun onPreferenceChange(preference: Preference?, newValue: Any?): Boolean {
-        // In this context, we're using the onPreferenceChange listener for checking whether the
-        // size setting was set to a valid value.
-        val error = Toast.makeText(
-            context,
-            "Please select a number between 0.1 and 3",
-            Toast.LENGTH_SHORT
-        )
-
-        // Double check that the preference is the size preference
-        val sizeKey = getString(R.string.pref_size_key)
-        if (preference?.key == sizeKey) {
-            val stringSize = newValue as String
-            try {
-                val size = stringSize.toFloat()
-                // If the number is outside of the acceptable range, show an error.
-                if (size > 3 || size <= 0) {
-                    error.show()
-                    return false
-                }
-            } catch (nfe: NumberFormatException) {
-                // If whatever the user entered can't be parsed to a number, show an error
-                error.show()
-                return false
-            }
-        }
-        return true
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        preferenceScreen.sharedPreferences
-            .registerOnSharedPreferenceChangeListener(this)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        preferenceScreen.sharedPreferences
-            .unregisterOnSharedPreferenceChangeListener(this)
-    }
 }

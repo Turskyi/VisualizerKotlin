@@ -14,6 +14,7 @@
         android:theme="@style/AppTheme"
         android:fullBackupContent="@xml/backup_descriptor">
         <activity
+            android:exported="true"
             android:launchMode="singleTop"
             android:name=".MainActivity">
             <intent-filter>
